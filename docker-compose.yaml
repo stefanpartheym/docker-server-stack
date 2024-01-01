@@ -1,0 +1,72 @@
+version: "3"
+
+services:
+  traefik:
+    image: traefik:latest
+    restart: always
+    hostname: traefik.${DOMAIN}
+    networks:
+      - ${PUBLIC_NETWORK}
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Common
+      TRAEFIK_LOG: "true"
+      TRAEFIK_LOG_LEVEL: "INFO"
+      TRAEFIK_API: "true"
+      # Entrypoints
+      TRAEFIK_ENTRYPOINTS_WEB: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: "websecure"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: "https"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
+      # Providers
+      TRAEFIK_PROVIDERS_DOCKER: "true"
+      TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: "unix://${DOCKER_SOCKET_VOLUME}"
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: "${PUBLIC_NETWORK}"
+      # Certificate resolvers
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_EMAIL: ${TRAEFIK_LETSENCRYPT_CERT_EMAIL}
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_STORAGE: "/letsencrypt/acme.json"
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_HTTPCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_DEFAULT_ACME_HTTPCHALLENGE_ENTRYPOINT: "web"
+    volumes:
+      - ${DOCKER_SOCKET_VOLUME}:${DOCKER_SOCKET_VOLUME}:ro
+      - letsencrypt-config:/letsencrypt
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.routers.traefik.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER}"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH_CRED}"
+
+  portainer:
+    image: "portainer/portainer-ce:latest"
+    restart: always
+    networks:
+      - ${PUBLIC_NETWORK}
+    volumes:
+      - ${DOCKER_SOCKET_VOLUME}:${DOCKER_SOCKET_VOLUME}:ro
+      - portainer-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)"
+      - "traefik.http.routers.portainer.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.routers.portainer.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER}"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+volumes:
+  letsencrypt-config:
+  portainer-data:
+
+networks:
+  public:
+    name: ${PUBLIC_NETWORK}
