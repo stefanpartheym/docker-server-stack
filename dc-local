@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+#
+# Wrapper script for docker compose to manage local stack.
+#
+
+docker compose -f ./docker-compose.local.yaml $@

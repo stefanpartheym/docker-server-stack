@@ -1,0 +1,57 @@
+#
+# Docker Compose file local environments without TLS.
+#
+
+services:
+  traefik:
+    image: traefik:latest
+    restart: always
+    hostname: traefik.${DOMAIN}
+    networks:
+      - ${PUBLIC_NETWORK}
+    ports:
+      - "80:80"
+    environment:
+      # Common
+      TRAEFIK_LOG: "true"
+      TRAEFIK_LOG_LEVEL: "INFO"
+      TRAEFIK_API: "true"
+      # Entrypoints
+      TRAEFIK_ENTRYPOINTS_WEB: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
+      # Providers
+      TRAEFIK_PROVIDERS_DOCKER: "true"
+      TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: "unix://${DOCKER_SOCKET_VOLUME}"
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_NETWORK: "${PUBLIC_NETWORK}"
+    volumes:
+      - ${DOCKER_SOCKET_VOLUME}:${DOCKER_SOCKET_VOLUME}:ro
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH_CRED}"
+
+  portainer:
+    image: "portainer/portainer-ce:latest"
+    restart: always
+    networks:
+      - ${PUBLIC_NETWORK}
+    volumes:
+      - ${DOCKER_SOCKET_VOLUME}:${DOCKER_SOCKET_VOLUME}:ro
+      - portainer-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)"
+      - "traefik.http.routers.portainer.entrypoints=${TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+volumes:
+  portainer-data:
+
+networks:
+  public:
+    name: ${PUBLIC_NETWORK}
