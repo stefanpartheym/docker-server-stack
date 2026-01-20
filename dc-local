@@ -4,4 +4,4 @@
 # Wrapper script for docker compose to manage local stack.
 #
 
-docker compose -f ./docker-compose.local.yaml $@
+docker compose --env-file .env.local -f ./docker-compose.local.yaml $@
