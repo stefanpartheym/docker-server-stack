@@ -13,6 +13,7 @@ services:
       TRAEFIK_LOG: "true"
       TRAEFIK_LOG_LEVEL: "INFO"
       TRAEFIK_API: ${TRAEFIK_API_ENABLED}
+      TRAEFIK_API_INSECURE: "false"
       # Entrypoints
       TRAEFIK_ENTRYPOINTS_WEB: "true"
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
