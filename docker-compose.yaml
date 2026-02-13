@@ -12,7 +12,7 @@ services:
       # Common
       TRAEFIK_LOG: "true"
       TRAEFIK_LOG_LEVEL: "INFO"
-      TRAEFIK_API: "true"
+      TRAEFIK_API: ${TRAEFIK_API_ENABLED}
       # Entrypoints
       TRAEFIK_ENTRYPOINTS_WEB: "true"
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
