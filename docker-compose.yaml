@@ -12,7 +12,7 @@ services:
       # Common
       TRAEFIK_LOG: "true"
       TRAEFIK_LOG_LEVEL: "INFO"
-      TRAEFIK_API: ${TRAEFIK_API_ENABLED}
+      TRAEFIK_API: "false"
       TRAEFIK_API_INSECURE: "false"
       # Entrypoints
       TRAEFIK_ENTRYPOINTS_WEB: "true"
@@ -37,15 +37,6 @@ services:
     volumes:
       - ${DOCKER_SOCKET_VOLUME}:${DOCKER_SOCKET_VOLUME}:ro
       - letsencrypt-config:/letsencrypt
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.${DOMAIN}`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.middlewares=traefik-auth"
-      - "traefik.http.routers.traefik.entrypoints=${TRAEFIK_ENTRYPOINT}"
-      - "traefik.http.routers.traefik.tls.certresolver=${TRAEFIK_TLS_CERTRESOLVER}"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH_CRED}"
 
   portainer:
     image: "portainer/portainer-ce:latest"
